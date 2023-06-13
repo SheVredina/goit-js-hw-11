@@ -1,60 +1,98 @@
-// import SlimSelect from 'slim-select';
 import Notiflix from 'notiflix';
-import { fetchBreeds, fetchCatByBreed } from './cat-api.js';
 
-const breedSelect = document.querySelector('.breed-select');
-const loader = document.querySelector('.loader');
-const error = document.querySelector('.error');
-const catInfo = document.querySelector('.cat-info');
+const API_KEY = '37248711-c91549f463c72d1d85eaef75b';
+let currentPage = 1;
+let currentQuery = '';
 
-function createBreedOption(breed) {
-  error.style.display = 'none';
+const searchForm = document.getElementById('search-form');
+const loadMoreBtn = document.querySelector('.load-more');
+const galleryContainer = document.getElementById('gallery');
 
-  const option = document.createElement('option');
-  option.value = breed.id;
-  option.textContent = breed.name;
-  breedSelect.appendChild(option);
-}
-
-function displayCatInfo(cat) {
-  catInfo.innerHTML = `
-    <img src="${cat.url}" alt="Cat Image" width= "300" />
-    <h3>${cat.breeds[0].name}</h3>
-    <p> ${cat.breeds[0].description}</p>
-    <p> ${cat.breeds[0].temperament}</p> `;
-  catInfo.style.display = 'block';
-}
-
-breedSelect.addEventListener('change', () => {
-  const selectedBreedId = breedSelect.value;
-
-  if (selectedBreedId) {
-    loader.style.display = 'block';
-    catInfo.style.display = 'none';
-    error.style.display = 'none';
-
-    fetchCatByBreed(selectedBreedId)
-      .then(cat => {
-        displayCatInfo(cat);
-        loader.style.display = 'none';
-      })
-      .catch(() => {
-        Notiflix.Notify.info(`❌Такого котика не найдено, поищите другого...`);
-        loader.style.display = 'none';
-      });
-  } else {
-    catInfo.style.display = 'none';
+searchForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const searchQuery = e.target.elements.searchQuery.value.trim();
+  if (searchQuery === '') {
+    return;
   }
+  currentQuery = searchQuery;
+  currentPage = 1;
+  galleryContainer.innerHTML = '';
+  searchImages(searchQuery);
 });
 
-fetchBreeds()
-  .then(breeds => {
-    breeds.forEach(breed => createBreedOption(breed));
-    loader.style.display = 'none';
-  })
-  .catch(() => {
-    Notiflix.Notify.warning(
-      `Oops! Something went wrong! Try reloading the page!`
-    );
-    loader.style.display = 'none';
+loadMoreBtn.addEventListener('click', () => {
+  currentPage++;
+  searchImages(currentQuery);
+});
+
+function searchImages(query) {
+  const url = `https://pixabay.com/api/?key=${API_KEY}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=15`;
+
+  axios
+    .get(url)
+    .then(response => {
+      const { hits, totalHits } = response.data;
+      if (hits.length === 0) {
+        if (currentPage === 1) {
+          Notiflix.Notify.warning(
+            'Sorry, there are no images matching your search query. Please try again.'
+          );
+        } else {
+          Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.");
+        }
+        return;
+      }
+      createGallery(hits);
+      if (totalHits > currentPage * 40) {
+        showLoadMoreButton();
+      } else {
+        hideLoadMoreButton();
+      }
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
+
+function createGallery(images) {
+  images.forEach(image => {
+    const card = document.createElement('div');
+    card.classList.add('photo-card');
+
+    const img = document.createElement('img');
+    img.src = image.webformatURL;
+    img.alt = image.tags;
+    img.loading = 'lazy';
+
+    const info = document.createElement('div');
+    info.classList.add('info');
+
+    const likes = createInfoItem('Likes', image.likes);
+    const views = createInfoItem('Views', image.views);
+    const comments = createInfoItem('Comments', image.comments);
+    const downloads = createInfoItem('Downloads', image.downloads);
+
+    info.append(likes, views, comments, downloads);
+    card.append(img, info);
+    galleryContainer.append(card);
   });
+}
+
+function createInfoItem(label, value) {
+  const p = document.createElement('p');
+  p.classList.add('info-item');
+  p.innerHTML = `<b>${label}:</b> ${value}`;
+  return p;
+}
+
+function showLoadMoreButton() {
+  loadMoreBtn.style.display = 'block';
+}
+
+function hideLoadMoreButton() {
+  loadMoreBtn.style.display = 'none';
+}
+
+function showNotification(message) {
+  Notiflix.Notify.warning(message);
+}
