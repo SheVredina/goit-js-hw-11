@@ -1,5 +1,3 @@
-// import Notiflix from 'notiflix';
-
 const API_KEY = '37248711-c91549f463c72d1d85eaef75b';
 let currentPage = 1;
 let currentQuery = '';
@@ -8,7 +6,7 @@ const searchForm = document.getElementById('search-form');
 const loadMoreBtn = document.querySelector('.load-more');
 const galleryContainer = document.getElementById('gallery');
 
-searchForm.addEventListener('submit', e => {
+searchForm.addEventListener('submit', async e => {
   e.preventDefault();
   const searchQuery = e.target.elements.searchQuery.value.trim();
   if (searchQuery === '') {
@@ -17,41 +15,37 @@ searchForm.addEventListener('submit', e => {
   currentQuery = searchQuery;
   currentPage = 1;
   galleryContainer.innerHTML = '';
-  searchImages(searchQuery);
+  await searchImages(searchQuery);
 });
 
-loadMoreBtn.addEventListener('click', () => {
+loadMoreBtn.addEventListener('click', async () => {
   currentPage++;
-  searchImages(currentQuery);
+  await searchImages(currentQuery);
 });
 
-function searchImages(query) {
-  const url = `https://pixabay.com/api/?key=${API_KEY}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=15`;
+async function searchImages(query) {
+  const url = `https://pixabay.com/api/?key=${API_KEY}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=40`;
 
-  axios
-    .get(url)
-    .then(response => {
-      const { hits, totalHits } = response.data;
-      if (hits.length === 0) {
-        if (currentPage === 1) {
-          alert(
-            'Sorry, there are no images matching your search query. Please try again.'
-          );
-        } else {
-          alert("We're sorry, but you've reached the end of search results.");
-        }
-        return;
+  try {
+    const response = await axios.get(url);
+    const { hits, totalHits } = response.data;
+    if (hits.length === 0) {
+      if (currentPage === 1) {
+        showNotification(
+          'Sorry, there are no images matching your search query. Please try again.'
+        );
       }
-      createGallery(hits);
-      if (totalHits > currentPage * 40) {
-        showLoadMoreButton();
-      } else {
-        hideLoadMoreButton();
-      }
-    })
-    .catch(error => {
-      console.error(error);
-    });
+           return;
+    }
+    createGallery(hits);
+    if (totalHits > currentPage * 40) {
+      showLoadMoreButton();
+    } else {
+      hideLoadMoreButton();
+    }
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function createGallery(images) {
