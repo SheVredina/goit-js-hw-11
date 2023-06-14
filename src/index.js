@@ -1,4 +1,4 @@
-import Notiflix from 'notiflix';
+// import Notiflix from 'notiflix';
 
 const API_KEY = '37248711-c91549f463c72d1d85eaef75b';
 let currentPage = 1;
@@ -34,11 +34,11 @@ function searchImages(query) {
       const { hits, totalHits } = response.data;
       if (hits.length === 0) {
         if (currentPage === 1) {
-          Notiflix.Notify.warning(
+          alert(
             'Sorry, there are no images matching your search query. Please try again.'
           );
         } else {
-          Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.");
+          alert("We're sorry, but you've reached the end of search results.");
         }
         return;
       }
@@ -94,5 +94,5 @@ function hideLoadMoreButton() {
 }
 
 function showNotification(message) {
-  Notiflix.Notify.warning(message);
+  alert(message);
 }
