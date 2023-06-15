@@ -1,3 +1,6 @@
+import axios from "axios";
+import Notiflix from 'notiflix';
+
 const API_KEY = '37248711-c91549f463c72d1d85eaef75b';
 let currentPage = 1;
 let currentQuery = '';
@@ -5,6 +8,8 @@ let currentQuery = '';
 const searchForm = document.getElementById('search-form');
 const loadMoreBtn = document.querySelector('.load-more');
 const galleryContainer = document.getElementById('gallery');
+const endMessage = document.getElementById('end-message');
+
 
 searchForm.addEventListener('submit', async e => {
   e.preventDefault();
@@ -81,12 +86,15 @@ function createInfoItem(label, value) {
 
 function showLoadMoreButton() {
   loadMoreBtn.style.display = 'block';
+  endMessage.style.display = 'none';
 }
 
 function hideLoadMoreButton() {
   loadMoreBtn.style.display = 'none';
+  endMessage.style.display = 'block';
+  endMessage.textContent = "We're sorry, but you've reached the end of search results.";
 }
 
 function showNotification(message) {
-  alert(message);
+  Notiflix.Notify.failure(message);
 }
