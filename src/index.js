@@ -1,7 +1,10 @@
 import axios from "axios";
 import Notiflix from 'notiflix';
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css";
 
-const API_KEY = '37248711-c91549f463c72d1d85eaef75b';
+import { fetchIMG, API_KEY } from './api.js';
+
 let currentPage = 1;
 let currentQuery = '';
 
@@ -29,11 +32,11 @@ loadMoreBtn.addEventListener('click', async () => {
 });
 
 async function searchImages(query) {
-  const url = `https://pixabay.com/api/?key=${API_KEY}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=40`;
-
+  const url = fetchIMG(query, currentPage);
   try {
     const response = await axios.get(url);
     const { hits, totalHits } = response.data;
+
     if (hits.length === 0) {
       if (currentPage === 1) {
         showNotification(
@@ -54,36 +57,41 @@ async function searchImages(query) {
 }
 
 function createGallery(images) {
-  images.forEach(image => {
-    const card = document.createElement('div');
-    card.classList.add('photo-card');
+  
+  const galleryElement = images.map( (image) => {
+   return  ` <div class="photo-card">
+   <a href="${image.largeImageURL}"><img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" width="300"/></a>
+   
+    <div class="info">
+      <p  class="info-item">
+        <b>Likes</b>
+        <b>${image.likes}</b>
+      </p>
+      <p class="info-item">
+        <b>Views</b>
+        <b>${image.views}</b>
+      </p>
+      <p class="info-item">
+      <b>Comments</b> 
+      <b>${image.comments}</b>
+      </p>
+      <p class="info-item">
+        <b>Downloads</b>
+        <b>${image.downloads}</b>
+      </p>
+    </div>
+  </div>`
+    } )
+  .join("");
+  galleryContainer.insertAdjacentHTML("beforeend", galleryElement);
 
-    const img = document.createElement('img');
-    img.src = image.webformatURL;
-    img.alt = image.tags;
-    img.loading = 'lazy';
-
-    const info = document.createElement('div');
-    info.classList.add('info');
-
-    const likes = createInfoItem('Likes', image.likes);
-    const views = createInfoItem('Views', image.views);
-    const comments = createInfoItem('Comments', image.comments);
-    const downloads = createInfoItem('Downloads', image.downloads);
-
-    info.append(likes, views, comments, downloads);
-    card.append(img, info);
-    galleryContainer.append(card);
+  let lightbox = new SimpleLightbox("#gallery a", {
+    captionsData: "alt", 
+  captionDelay: 250,
   });
-}
-
-function createInfoItem(label, value) {
-  const p = document.createElement('p');
-  p.classList.add('info-item');
-  p.innerHTML = `<b>${label}:</b> ${value}`;
-  return p;
-}
-
+  lightbox.refresh();
+  }
+  
 function showLoadMoreButton() {
   loadMoreBtn.style.display = 'block';
   endMessage.style.display = 'none';
